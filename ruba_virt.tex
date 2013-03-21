@@ -77,6 +77,17 @@ VNC server/client used in Palacios.
 \end{figure}                                               
 
 \subsection{VGA}
+Palacios currently uses an emulated Video Graphics Array (VGA) device for graphics. VGA is a display standard that was first developed by IBM in 1987 for their PS/2 computers. It was used as an interface between a computer monitor and the hardware. It gave users the ability to operate in one of two display modes at a time; either a 640x480  resolution display with up to 16 colors or a lower resolution display of 320x200 but with up to 256 colors available. 
+\par
+To connect to a monitor, the hardware used a 15-pin connector that allowed communication through signals between the monitor and the VGA device. As seen in Figure 1, each color (red, green, blue) has a dedicated pin for data to flow through as well as specific pins for vertical sync and horizontal sync. Vertical and horizontal sync are digital signals whereas the colors are analog, and used for synchronization of the display. The vertical sync tells a monitor to display a new image and the horizontal sync tells the monitor to refresh a single row of pixels. In the case of VGA 640x480 resolution, each row would be of size 640 pixels and 480 horizontal syncs would be sent before the entire screen is drawn. 
+\par
+Today, the successors of VGA are still in wide-use by graphic cards, but they are slowly becoming replaced as DVI (Digital Visual Interfaces) and HDMI (High-Definition Multimedia Interface) become more popular. VGA maintains an internal buffer where it writes the contents of the screen. The internal buffer maintains an array of pixels, representing the screen and this array is written into every time the screen gets updated. Thus this buffer always has an updated version of the screen contents.
+
+\begin{figure}                                              
+\centering                                                     
+\epsfig{file=vga-head.eps, height=6cm, width=9cm}                   
+\caption{VGA Connector Socket}   
+\end{figure} 
 
 \subsection{The Graphics Console} % can add more about its functions
 The Graphics Console interface interfaces with a VM's text\--mode and graphics
@@ -100,7 +111,8 @@ about the paravirtual graphics card (Paragraph) that we built to replace the VGA
 device. We also discuss the addition of an X11 server and X11 device driver to
 the virtual guest. Figure 2 shows the new addition of Paragraph and X11 to
 Palacios and the interaction between these new components on the guest and host
-machines. \\
+machines. 
+\par
 When an X11 client is run on the guest (such as xterm for example), it talks to
 an X11 server. The X server needs the address of a frame buffer onto which it
 draws pixel values. It gets the address of that frame buffer through the device
@@ -240,8 +252,8 @@ dvi output of this document.
 \begin{table}
  \centering
   \caption{X11 Driver Functions}
-  \begin{tabular}{|l|p{6cm}|} \hline
-  Function Name&Description\\ \hline
+  \begin{tabular}{|l|p{4cm}|} \hline
+  \textbf{Function Name}&\textbf{Description}\\ \hline
   ScreenInit & An initialisation function is called from the DIX layer for each screen at the start of each server generation.\\ \hline
   Probe & Identify if there is any hardware present that the driver knows how to drive.\\ \hline
   PreInit & Process information from the xorg.conf file, determine the full characteristics of the hardware, and determine if a valid configuration is present. \\ \hline
@@ -306,12 +318,12 @@ details on each of these is found in the \textit{Author's Guide}.
 %\caption{A sample black and white graphic (.eps format).}
 %\end{figure}
 
-\begin{figure}
-\centering
-\epsfig{file=fly.eps, height=1in, width=1in}
-\caption{A sample black and white graphic (.eps format)
-that has been resized with the \texttt{epsfig} command.}
-\end{figure}
+%\begin{figure}
+%\centering
+%\epsfig{file=fly.eps, height=1in, width=1in}
+%\caption{A sample black and white graphic (.eps format)
+%that has been resized with the \texttt{epsfig} command.}
+%\end{figure}
 
 
 As was the case with tables, you may want a figure
