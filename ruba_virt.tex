@@ -69,7 +69,7 @@ The VGA device, the graphics console, and the VNC server/client. In the
 following subsection we will give an overview of the VGA device, followed by two
 subsections, one describing the graphics console and the other describing the
 VNC server/client used in Palacios.
- TODO: explain the figure
+
 \begin{figure}[h]                                              
 \centering                                                 
 \epsfig{file=VGA.eps, height=3in, width=4in}                                      
@@ -94,7 +94,7 @@ maintains. By connecting to the VNC server, Palacios's graphics console exports
 the frame buffer to a VNC client which connects to the VM at a certain port and
 displays the screen with the contents of that frame buffer.
 
-\section{Our method: Paragraph and X11}
+\section{Our method}
 After describing the interaction between Palacios's VGA virtual device, graphics console and the VNC server and client, we now go into detail
 about the paravirtual graphics card (Paragraph) that we built to replace the VGA 
 device. We also discuss the addition of an X11 server and X11 device driver to
@@ -105,8 +105,8 @@ When an X11 client is run on the guest (such as xterm for example), it talks to
 an X11 server. The X server needs the address of a frame buffer onto which it
 draws pixel values. It gets the address of that frame buffer through the device
 driver it is configured to use (in our case, the Paragraph device driver). The 
-driver searches for the device, and sets the frame buffer's base address to
-Paragraph's virtual address. Once Paragraph has data written to it, it renders a
+driver searches for the device, and enables it to be written on by the X11
+server.  Once Paragraph has data written to it, it renders a
 screen display to the graphics console in Palacios, which stores it in memory
 and allows host user access to it. The VNC server uses this access to make the 
 screen contents available via the VNC protocol. The VNC client connects to the 
@@ -135,13 +135,13 @@ graphics console is used for memory, then the appropriate spec information is
 also kept in the paragraph state struct. 
 \subsubsection{Configuration}
 Paragraph can be set to 1 of 3 modes: \\
-\begin{itemize}
+\begin{enumerate}
 \item MEM: Paragraph is used directly as backing memory on which the pixel values
 are stored.
 \item GCONS\textunderscore MEM: Paragraph is used as backing memory but its contents are
 then rendered to the graphic console's frame buffer.
 \item GCONSD\textunderscore DIRECT: The graphics console is used directly as memory.
-\end{itemize}
+\end{enumerate}
 When Paragraph is configured to MEM mode, it can be mapped into a chunk of
 memory (mmap) and then written to directly. Whatever is written to it will be
 passed on to the VNC server and displayed on the screen. When Paragraph is set
@@ -154,20 +154,23 @@ console will be written to directly.
 The Paragraph device projects a graphics console to the guest as a PCI device
 Paragraph's length was configured to 4MB and it was given the physical address
 of 0x80000000. Paragraph's implementation includes the required initialization
-such as registering it as a PCI device, initializing the PCI BAR
+such as registering it as a PCI device and initializing the PCI BAR. 
 
 Paragraph's implementation is less than 300 lines of code.
 
 \subsection{X11}
  TODO
-\subsubsection{X11 Client\--Server Model}
-
 \subsubsection{X11 device driver for Paragraph}
 The X11 server requires device drivers to identify and communicate with devices.
 In our case, we needed to write a device driver for Paragraph which the X server can
 write onto.
 X11 drivers come with a set of mandatory functions that they must perform. Table
-1 lists these functions.
+1 lists these functions. 
+Due to Paragraph's straightforward and simple interface, the device driver only
+needed slight editing in order for it to communicate with paragraph. A simple
+mmap function was used to map paragraph to a chunk of memory and return
+paragraph's virtual address, which would consequently be used as the frame
+buffer's base address. The X11 server writes to the memory at that address. 
 \section{Results}
 The goal of this project was to write a paravirtual graphics card and run an X11
 client on the guest that uses this graphics card. Professor Dinda aided us
@@ -346,8 +349,8 @@ not during their office hours.
 % The following two commands are all you need in the
 % initial runs of your .tex file to
 % produce the bibliography for the citations in your paper.
-\bibliographystyle{abbrv}
-\bibliography{sigproc}  % sigproc.bib is the name of the Bibliography in this case
+%\bibliographystyle{abbrv}
+%\bibliography{sigproc}  % sigproc.bib is the name of the Bibliography in this case
 % You must have a proper ".bib" file
 %  and remember to run:
 % latex bibtex latex latex
@@ -390,6 +393,20 @@ You just add the names and information in the
 \texttt{{\char'134}additionalauthors} command at the start
 of the document.
 \subsection{References}
+\begin{thebibliography}{1}
+
+  \bibitem{techreport} Lange, Jack, Peter Dinda, Kyle Hale, and Lei Xia. An Introduction to the Palacios Virtual Machine Monitor---Version 1.3. Tech. Northwestern University, 11 Nov. 2011. Web. 01 Mar. 2013.
+
+  \bibitem{impj}  The 
+
+  \bibitem{norman} E. H. Norman {\em Japan's emergence as a modern
+  state} 1940: International Secretariat, Institute of Pacific
+  Relations.
+
+  \bibitem{fo} Bob Tadashi Wakabayashi {\em Anti-Foreignism and Western
+  Learning in Early-Modern Japan} 1986: Harvard University Press.
+
+  \end{thebibliography}
 Generated by bibtex from your ~.bib file.  Run latex,
 then bibtex, then latex twice (to resolve references)
 to create the ~.bbl file.  Insert that ~.bbl file into
