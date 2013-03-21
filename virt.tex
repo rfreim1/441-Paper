@@ -1,0 +1,443 @@
+
+\documentclass{acm_proc_article-sp}
+%documentclass{article}
+\begin{document}
+
+\title{Paragraph: A Paravirtual Graphics Card in Palacios}
+\numberofauthors{3} %  in this sample file, there are a *total*
+\author{
+% 1st. author
+\alignauthor
+Ruba Merza\\
+       \affaddr{Northwestern University}\\
+       \affaddr{1117 Forest Avenue}\\
+       \affaddr{Evanston, IL, 60202}\\
+       \email{ruba@u.northwestern.edu}
+% 2nd. author
+\alignauthor
+Ross Freiman\\
+       \affaddr{Northwestern University}\\
+       \affaddr{P.O. Box 1212}\\
+       \affaddr{Dublin, Ohio 43017-6221}\\
+       \email{webmaster@marysville-ohio.com}
+% 3rd. author
+\alignauthor
+Ketaki Joshi\\
+       \affaddr{Northwestern University}\\
+       \affaddr{1 Th{\o}rv{\"a}ld Circle}\\
+       \affaddr{Hekla, Iceland}\\
+       \email{larst@affiliation.org}
+}
+
+\maketitle
+\begin{abstract}
+The focus of this paper is implementing a paravirtual graphics card and an X11 device driver for
+a virtual machine monitor called Palacios. While Palacios implements a VGA graphics card with
+a complex interface to the virtual guest, a paravirtual graphics card provides a simple interface
+by writing directly an array of pixels into a chunk of memory, called the framebuffer, which is then
+read by an X11 server and rendered onto the screen through an X11 client.
+This paper looks at the current implementation of graphics in Palacios and describes the new
+implementation with a paravirtual graphics card. It also provides a short description of the X
+client\--­server model and the X11 driver written for the paravirtual graphics card.
+\end{abstract}
+
+\category{H.4}{Virtualization}{Systems}
+\terms{Documentation, Design, Experimentation, Theory}
+\keywords{Paravirtual, Graphics, Graphics Card, X11, Palacios, Virtual Device}
+
+\section{Introduction}
+The goal of this paper is to describe an implementation of a paravirtual
+graphics card for Palacios, an OS independent open source virtual machine
+monitor. \cite{Lange: Technical} Palacios is designed to be 
+highly configurable and provides a suitable environment
+for prototyping new extensions and devices. Palacios currently implements
+  a virtual VGA card whose interface to the guest VM is very elaborate. The
+  purpose of a paravirtual graphics card is to eliminate such complex interface
+  by providing a much simpler and more compact one to the guest that can
+  consequently make for a substitute for the VGA card altogether. In addition to
+  replacing the VGA in Palacios, the paravirtual graphics card's manageable
+  interface makes it easy to configure it with an X11 device driver and thus
+  enables us to harness the capabilities of the X11 window system and run it with the
+  graphics card within a virtual guest. In the following sections we go into
+  detail about Palacios' current implementation of graphics, the paravirtual
+  graphics card's interface, the X11 window system, and the steps we took in
+  building such graphics card and running X on a virtual guest.
+
+\section{Graphics in Palacios}
+The way graphics currently work on Palacios comprises of three main components.
+The VGA device, the graphics console, and the VNC server/client. In the
+following subsection we will give an overview of the VGA device, followed by two
+subsections, one describing the graphics console and the other describing the
+VNC server/client used in Palacios.
+
+\begin{figure}[h]                                              
+\centering                                                 
+\epsfig{file=VGA.eps, height=3in, width=4in}                                      
+\caption{A model of how graphics work currently in Palacios}   
+\end{figure}                                               
+
+\subsection{VGA}
+
+\subsection{The Graphics Console}
+The Graphics Console interface interfaces with a VM's text\--mode and graphics
+mode display adaptor (e.g. VGA), keyboard, and mouse to allow the host OS to display the VM
+console as appropriate. In the Linux module, the graphics console interface implementation provides
+for a userspace utility to attach to a frame buffer. The utility then exports this frame buffer, keyboard,
+and mouse to remote clients through the VNC protocol. \cite{Dinda: Technical}
+\subsection{VNC}
+Palacios uses a Virtual Network Computing (VNC) server and a VNC client to
+display the guest's screen. The VNC client makes a request to the VNC server to view the screen. 
+The VNC server uses a special system call to request an array of pixels representing the whole screen from Palacios. 
+Palacios copies into that array (frame buffer) from an internal array that it
+maintains. By connecting to the VNC server, Palacios's graphics console exports
+the frame buffer to a VNC client which connects to the VM at a certain port and
+displays the screen with the contents of that frame buffer.
+
+\section{Paragraph and X11}
+After describing the interaction between Palacios's VGA virtual
+device, graphics console and the VNC server and client, we now go into detail
+about the paravirtual graphics card (Paragraph) that we built to replace the VGA
+device. We also discuss the addition of an X11 server and X11 device driver to
+the virtual guest. Figure 2 shows the new addition of Paragraph and X11 to
+Palacios and the interaction between these new components on the guest and host
+machines.
+\begin{figure}[h]                                              
+\centering                                                     
+\epsfig{file=Paragraph.eps, height=3in, width=4in}                   
+\caption{The new model of graphics in Palacios}   
+\end{figure}                                                   
+
+
+\subsection{ParaGraph: The Paravirtual Graphics Card}
+A paravirtual graphics card is essentially a way of representing a graphics card
+interface to a virtual guest that is similar but not identical to its hardware
+implementation. In our case, we have Paragraph, a virtual graphics card device
+that offers the guest a very straightforward interface which is simply: write
+the array of pixels. Paragraph's configuration specifies how to write to the
+internal array of pixels that Palacios uses to copy from into the frame buffer
+that is maintained by the graphics console. \\
+Paragraph's implementation is less than 300 lines of code.
+The Paragraph device projects a graphics console to the guest as a PCI device
+with a single BAR. The BAR maps the frame buffer's memory.
+Paragraph can be configured to 1 of 3 modes: \\
+\begin{itemize}
+\item MEM: Paragraph is used directly as backing memory on which the pixel values
+are stored.
+\item GCONS\textunderscore MEM: Paragraph is used as backing memory but its contents are
+then rendered to the graphic console's frame buffer.
+\item GCONSD\textunderscore DIRECT: The graphics console is used directly as memory.
+\end{itemize}
+When Paragraph is configured to MEM mode, it can be mapped into a chunk of
+memory (mmap) and then written to directly. Whatever is written to it will be
+passed on to the VNC server and displayed on the screen. When Paragraph is set
+to GCONS\textunderscore MEM, whatever gets written on Paragraph will then be
+copied to the graphic console's frame buffer (memcpy) and the VNC server will
+display its contents on Screen. Finally, if Paragraph is set to GCONS
+\textunderscore DIRECT, nothing will be written on the device, the graphic
+console will be written to directly.
+
+\subsection{X11}
+\subsubsection{X11 Client\--Server Model}
+\subsubsection{X11 device driver for Paragraph}
+The X11 server requires device drivers to identify and communicate with devices.
+In our case, we needed to write a device driver for Paragraph which the X server can
+write onto.
+X11 drivers come with a set of mandatory functions that they must perform. Table
+1 lists these functions.
+
+\section{Results}
+\section{Outstanding Issues}
+\subsection{Citations}
+Citations to articles \cite{bowman:reasoning, clark:pct, braams:babel, herlihy:methodology},
+conference
+proceedings \cite{clark:pct} or books \cite{salas:calculus, Lamport:LaTeX} listed
+in the Bibliography section of your
+article will occur throughout the text of your article.
+You should use BibTeX to automatically produce this bibliography;
+you simply need to insert one of several citation commands with
+a key of the item cited in the proper location in
+the \texttt{.tex} file \cite{Lamport:LaTeX}.
+The key is a short reference you invent to uniquely
+identify each work; in this sample document, the key is
+the first author's surname and a
+word from the title.  This identifying key is included
+with each item in the \texttt{.bib} file for your article.
+
+The details of the construction of the \texttt{.bib} file
+are beyond the scope of this sample document, but more
+information can be found in the \textit{Author's Guide},
+and exhaustive details in the \textit{\LaTeX\ User's
+Guide}\cite{Lamport:LaTeX}.
+
+This article shows only the plainest form
+of the citation command, using \texttt{{\char'134}cite}.
+This is what is stipulated in the SIGS style specifications.
+No other citation format is endorsed.
+
+\subsection{Tables}
+Because tables cannot be split across pages, the best
+placement for them is typically the top of the page
+nearest their initial cite.  To
+ensure this proper ``floating'' placement of tables, use the
+environment \textbf{table} to enclose the table's contents and
+the table caption.  The contents of the table itself must go
+in the \textbf{tabular} environment, to
+be aligned properly in rows and columns, with the desired
+horizontal and vertical rules.  Again, detailed instructions
+on \textbf{tabular} material
+is found in the \textit{\LaTeX\ User's Guide}.
+
+Immediately following this sentence is the point at which
+Table 1 is included in the input file; compare the
+placement of the table here with the table in the printed
+dvi output of this document.
+
+\begin{table}
+\centering
+\caption{Frequency of Special Characters}
+\begin{tabular}{|c|c|l|} \hline
+Non-English or Math&Frequency&Comments\\ \hline
+\O & 1 in 1,000& For Swedish names\\ \hline
+$\pi$ & 1 in 5& Common in math\\ \hline
+\$ & 4 in 5 & Used in business\\ \hline
+$\Psi^2_1$ & 1 in 40,000& Unexplained usage\\
+\hline\end{tabular}
+\end{table}
+
+To set a wider table, which takes up the whole width of
+the page's live area, use the environment
+\textbf{table*} to enclose the table's contents and
+the table caption.  As with a single-column table, this wide
+table will ``float" to a location deemed more desirable.
+Immediately following this sentence is the point at which
+Table 2 is included in the input file; again, it is
+instructive to compare the placement of the
+table here with the table in the printed dvi
+output of this document.
+
+
+\begin{table*}
+\centering
+\caption{Some Typical Commands}
+\begin{tabular}{|c|c|l|} \hline
+Command&A Number&Comments\\ \hline
+\texttt{{\char'134}alignauthor} & 100& Author alignment\\ \hline
+\texttt{{\char'134}numberofauthors}& 200& Author enumeration\\ \hline
+\texttt{{\char'134}table}& 300 & For tables\\ \hline
+\texttt{{\char'134}table*}& 400& For wider tables\\ \hline\end{tabular}
+\end{table*}
+% end the environment with {table*}, NOTE not {table}!
+
+\subsection{Figures}
+Like tables, figures cannot be split across pages; the
+best placement for them
+is typically the top or the bottom of the page nearest
+their initial cite.  To ensure this proper ``floating'' placement
+of figures, use the environment
+\textbf{figure} to enclose the figure and its caption.
+
+This sample document contains examples of \textbf{.eps}
+and \textbf{.ps} files to be displayable with \LaTeX.  More
+details on each of these is found in the \textit{Author's Guide}.
+
+%\begin{figure}
+%\centering
+%\epsfig{file=VGA.eps}
+%\caption{A sample black and white graphic (.eps format).}
+%\end{figure}
+
+\begin{figure}
+\centering
+\epsfig{file=fly.eps, height=1in, width=1in}
+\caption{A sample black and white graphic (.eps format)
+that has been resized with the \texttt{epsfig} command.}
+\end{figure}
+
+
+As was the case with tables, you may want a figure
+that spans two columns.  To do this, and still to
+ensure proper ``floating'' placement of tables, use the environment
+\textbf{figure*} to enclose the figure and its caption.
+
+Note that either {\textbf{.ps}} or {\textbf{.eps}} formats are
+used; use
+the \texttt{{\char'134}epsfig} or \texttt{{\char'134}psfig}
+commands as appropriate for the different file types.
+
+\subsection{Theorem-like Constructs}
+Other common constructs that may occur in your article are
+the forms for logical constructs like theorems, axioms,
+corollaries and proofs.  There are
+two forms, one produced by the
+command \texttt{{\char'134}newtheorem} and the
+other by the command \texttt{{\char'134}newdef}; perhaps
+the clearest and easiest way to distinguish them is
+to compare the two in the output of this sample document:
+
+This uses the \textbf{theorem} environment, created by
+the\linebreak\texttt{{\char'134}newtheorem} command:
+\newtheorem{theorem}{Theorem}
+\begin{theorem}
+Let $f$ be continuous on $[a,b]$.  If $G$ is
+an antiderivative for $f$ on $[a,b]$, then
+\begin{displaymath}\int^b_af(t)dt = G(b) - G(a).\end{displaymath}
+\end{theorem}
+
+The other uses the \textbf{definition} environment, created
+by the \texttt{{\char'134}newdef} command:
+\newdef{definition}{Definition}
+\begin{definition}
+If $z$ is irrational, then by $e^z$ we mean the
+unique number which has
+logarithm $z$: \begin{displaymath}{\log e^z = z}\end{displaymath}
+\end{definition}
+
+\begin{figure}
+\centering
+\psfig{file=rosette.ps, height=1in, width=1in,}
+\caption{A sample black and white graphic (.ps format) that has
+been resized with the \texttt{psfig} command.}
+\end{figure}
+
+Two lists of constructs that use one of these
+forms is given in the
+\textit{Author's  Guidelines}.
+
+\begin{figure*}
+\centering
+\epsfig{file=flies.eps}
+\caption{A sample black and white graphic (.eps format)
+that needs to span two columns of text.}
+\end{figure*}
+and don't forget to end the environment with
+{figure*}, not {figure}!
+ 
+There is one other similar construct environment, which is
+already set up
+for you; i.e. you must \textit{not} use
+a \texttt{{\char'134}newdef} command to
+create it: the \textbf{proof} environment.  Here
+is a example of its use:
+\begin{proof}
+Suppose on the contrary there exists a real number $L$ such that
+\begin{displaymath}
+\lim_{x\rightarrow\infty} \frac{f(x)}{g(x)} = L.
+\end{displaymath}
+Then
+\begin{displaymath}
+l=\lim_{x\rightarrow c} f(x)
+= \lim_{x\rightarrow c}
+\left[ g{x} \cdot \frac{f(x)}{g(x)} \right ]
+= \lim_{x\rightarrow c} g(x) \cdot \lim_{x\rightarrow c}
+\frac{f(x)}{g(x)} = 0\cdot L = 0,
+\end{displaymath}
+which contradicts our assumption that $l\neq 0$.
+\end{proof}
+
+Complete rules about using these environments and using the
+two different creation commands are in the
+\textit{Author's Guide}; please consult it for more
+detailed instructions.  If you need to use another construct,
+not listed therein, which you want to have the same
+formatting as the Theorem
+or the Definition\cite{salas:calculus} shown above,
+use the \texttt{{\char'134}newtheorem} or the
+\texttt{{\char'134}newdef} command,
+respectively, to create it.
+
+\subsection*{A {\secit Caveat} for the \TeX\ Expert}
+Because you have just been given permission to
+use the \texttt{{\char'134}newdef} command to create a
+new form, you might think you can
+use \TeX's \texttt{{\char'134}def} to create a
+new command: \textit{Please refrain from doing this!}
+Remember that your \LaTeX\ source code is primarily intended
+to create camera-ready copy, but may be converted
+to other forms -- e.g. HTML. If you inadvertently omit
+some or all of the \texttt{{\char'134}def}s recompilation will
+be, to say the least, problematic.
+
+\section{Conclusions}
+This paragraph will end the body of this sample document.
+Remember that you might still have Acknowledgments or
+Appendices; brief samples of these
+follow.  There is still the Bibliography to deal with; and
+we will make a disclaimer about that here: with the exception
+of the reference to the \LaTeX\ book, the citations in
+this paper are to articles which have nothing to
+do with the present subject and are used as
+examples only.
+%\end{document}  % This is where a 'short' article might terminate
+
+%ACKNOWLEDGMENTS are optional
+\section{Acknowledgments}
+This section is optional; it is a location for you
+to acknowledge grants, funding, editing assistance and
+what have you.  In the present case, for example, the
+authors would like to thank Gerald Murray of ACM for
+his help in codifying this \textit{Author's Guide}
+and the \textbf{.cls} and \textbf{.tex} files that it describes.
+
+%
+% The following two commands are all you need in the
+% initial runs of your .tex file to
+% produce the bibliography for the citations in your paper.
+\bibliographystyle{abbrv}
+\bibliography{sigproc}  % sigproc.bib is the name of the Bibliography in this case
+% You must have a proper ".bib" file
+%  and remember to run:
+% latex bibtex latex latex
+% to resolve all references
+%
+% ACM needs 'a single self-contained file'!
+%
+%APPENDICES are optional
+%\balancecolumns
+\appendix
+%Appendix A
+\section{Headings in Appendices}
+The rules about hierarchical headings discussed above for
+the body of the article are different in the appendices.
+In the \textbf{appendix} environment, the command
+\textbf{section} is used to
+indicate the start of each Appendix, with alphabetic order
+designation (i.e. the first is A, the second B, etc.) and
+a title (if you include one).  So, if you need
+hierarchical structure
+\textit{within} an Appendix, start with \textbf{subsection} as the
+highest level. Here is an outline of the body of this
+document in Appendix-appropriate form:
+\subsection{Introduction}
+\subsection{The Body of the Paper}
+\subsubsection{Type Changes and  Special Characters}
+\subsubsection{Math Equations}
+\paragraph{Inline (In-text) Equations}
+\paragraph{Display Equations}
+\subsubsection{Citations}
+\subsubsection{Tables}
+\subsubsection{Figures}
+\subsubsection{Theorem-like Constructs}
+\subsubsection*{A Caveat for the \TeX\ Expert}
+\subsection{Conclusions}
+\subsection{Acknowledgments}
+\subsection{Additional Authors}
+This section is inserted by \LaTeX; you do not insert it.
+You just add the names and information in the
+\texttt{{\char'134}additionalauthors} command at the start
+of the document.
+\subsection{References}
+Generated by bibtex from your ~.bib file.  Run latex,
+then bibtex, then latex twice (to resolve references)
+to create the ~.bbl file.  Insert that ~.bbl file into
+the .tex source file and comment out
+the command \texttt{{\char'134}thebibliography}.
+% This next section command marks the start of
+% Appendix B, and does not continue the present hierarchy
+\section{More Help for the Hardy}
+The acm\_proc\_article-sp document class file itself is chock-full of succinct
+and helpful comments.  If you consider yourself a moderately
+experienced to expert user of \LaTeX, you may find reading
+it useful but please remember not to change it.
+\balancecolumns
+% That's all folks!
+\end{document}
