@@ -116,7 +116,6 @@ VNC server, gets the content and displays on screen.
 \epsfig{file=Paragraph.eps, height=3in, width=4in}                   
 \caption{The new model of graphics in Palacios}   
 \end{figure}                                                   
- TODO: what the figure means
 \subsection{ParaGraph: The Paravirtual Graphics Card}
 A paravirtual graphics card is essentially a way of representing a graphics card
 interface to a virtual guest that is similar but not identical to its hardware
@@ -135,7 +134,7 @@ physical and virtual addresses are used to store such information. If the
 graphics console is used for memory, then the appropriate spec information is
 also kept in the paragraph state struct. 
 \subsubsection{Configuration}
-Paragraph can be configured to 1 of 3 modes: \\
+Paragraph can be set to 1 of 3 modes: \\
 \begin{itemize}
 \item MEM: Paragraph is used directly as backing memory on which the pixel values
 are stored.
@@ -162,9 +161,7 @@ Paragraph's implementation is less than 300 lines of code.
 \subsection{X11}
  TODO
 \subsubsection{X11 Client\--Server Model}
-The X11 server requires many shared libraries to be installed in order to run,
 
- In order to run the X11 server on the virtual gues
 \subsubsection{X11 device driver for Paragraph}
 The X11 server requires device drivers to identify and communicate with devices.
 In our case, we needed to write a device driver for Paragraph which the X server can
