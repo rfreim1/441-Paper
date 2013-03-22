@@ -106,7 +106,8 @@ mode display adaptor (e.g. VGA), keyboard, and mouse to allow the host OS to dis
 console as appropriate. In the Linux module, the graphics console interface implementation provides
 for a userspace utility to attach to a frame buffer. The utility then exports this frame buffer, keyboard,
 and mouse to remote clients through the VNC protocol. \cite{techreport}
-
+\\
+\\
 \subsection{VNC}
 Palacios uses a Virtual Network Computing (VNC) server and a VNC client to
 display the guest's screen. 
@@ -301,14 +302,20 @@ In many ways, X11 is very flexible and extensible, making a good candidate to be
 The X11 server requires device drivers to identify and communicate with devices.
 To identify a driver for a particular device, Xorg uses a configuration file, xorg.conf, for its initial setup as describe in Section 3.2.1. 
 In our case, we needed to write a device driver for Paragraph which the X server can
-write onto.
+write onto. We used 
 X11 drivers come with a set of mandatory functions that they must perform. Table
 3 lists these functions.
+The dummy\_driver.c found in X11's directory of driver's was used as a template for our driver because it was the most
+bare-bones of all the drivers provided by X11. 
 Due to Paragraph's straightforward and simple interface, the device driver only
 needed slight editing in order for it to communicate with paragraph. A simple
 mmap function was used to map paragraph to a chunk of memory and return
 paragraph's virtual address, which would consequently be used as the frame
 buffer's base address. The X11 server writes to the memory at that address.
+All other functions in our device driver remained the same as they were before in the dummy\_driver.c file. 
+This is possible because most of the functions called in the drivers are just used to setup the server and are not 
+necessary for our paragraph device to work properly. This file contains about 800 lines of code, in which we added only around 10 lines.
+A VGA driver, in comparison, has around 1800 lines of code. A thousand more lines than we even need. 
 
 
 \begin{table}
@@ -339,6 +346,7 @@ frame buffer for the X11 server to render to. However, we still have not been ab
 the X server on the guest, mainly due to our use of a fairly limited guest OS
 that don't have all the devices or libraries that the X server needs.
 
+We faced many challenges that stopped our progress from proceeding as quickly as thought it might have. The main problems faced with were getting the X11 Server up and running. The right libraries for X11 needed to be linked dynamically, and none of these drivers were on the guests. There were also required programs such as pixman that were not on the VMs. In addition, many guests just did not work with X11 for one reason or another so many of them were tried before X11 was actually able to be run. 
 \section{Outstanding Issues}
 Running the X server on the virtual guest requires it to be reconfigured. The
 use of another guest that has pseudo terminals installed. A
@@ -348,6 +356,7 @@ the other side is called the slave side.
 Data written to the master side is received by the slave side as if it was the result of a user typing at an ordinary terminal, 
 and data written to the slave side is sent to the master side as if it was written on an ordinary terminal.
 X11 clients such as xterm use pseudo terminals to implement their terminal emulation functionality.
+In addition, the Xserver sometimes runs into a Segmentation Fault whose reason for occurring is unknown presently.
 
 \section{Acknowledgments}
 We would like to thank Peter Dinda for the many, many hours he spent tirelessly with us as we
