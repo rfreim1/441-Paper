@@ -24,9 +24,9 @@ Ross Freiman\\
 \alignauthor
 Ketaki Joshi\\
        \affaddr{Northwestern University}\\
-       \affaddr{1 Th{\o}rv{\"a}ld Circle}\\
-       \affaddr{Hekla, Iceland}\\
-       \email{larst@affiliation.org}
+       \affaddr{1021 Dempster Street}\\
+       \affaddr{Evanston ,IL 60201}\\
+       \email{ketakijoshi2013@u.northwestern.edu}
 }
 
 \maketitle
@@ -77,12 +77,17 @@ VNC server/client used in Palacios.
 \end{figure}                                               
 
 \subsection{VGA}
+\subsubsection{What is VGA?}
 Palacios currently uses an emulated Video Graphics Array (VGA) device for graphics. VGA is a display standard that was first developed by IBM in 1987 for their PS/2 computers. It was used as an interface between a computer monitor and the hardware. It gave users the ability to operate in one of two display modes at a time; either a 640x480  resolution display with up to 16 colors or a lower resolution display of 320x200 but with up to 256 colors available. Today, the successors of VGA are still in wide-use by graphic cards, but they are slowly becoming replaced as DVI (Digital Visual Interfaces) and HDMI (High-Definition Multimedia Interface) become more popular.
 \par
 To connect to a monitor, the hardware used a 15-pin connector that allowed communication through signals between the monitor and the VGA device. As seen in Figure 2, each color (red, green, blue) has a dedicated pin for data to flow through as well as specific pins for vertical sync and horizontal sync. Vertical and horizontal sync are digital signals whereas the colors are analog, and used for synchronization of the display. The vertical sync tells a monitor to display a new image and the horizontal sync tells the monitor to refresh a single row of pixels. In the case of VGA 640x480 resolution, each row would be of size 640 pixels and 480 horizontal syncs would be sent before the entire screen is drawn. Once a vertical sync pulse is received, the monitor starts to draw back at its upper-left hand corner. These synchronization pulses sent by the video card are extremely important for creating and maintaining stable images on the screen. Pins 5 through 10, excluding pin 9, are used as grounds for the colors and syncs. The other pins (4, 11, 12, \& 15) are called “monitor ID” pins that send information to the video card about what type of monitor it is connected to. Pin 9 is actually plugged and not used for anything, except in helping align the other pins with their respective sockets. 
-
 \par
- In terms of how it works, VGA maintains an internal buffer where it writes the contents of the screen. This internal buffer maintains an array of pixels, representing the screen and this array is written into every time the screen needs to be updated. Thus this buffer always has an updated version of the screen contents.
+ In terms of how it works, VGA maintains an internal buffer where it holds the contents of the screen. This internal buffer maintains an array of pixels, representing the screen and this array is written into every time the screen needs to be updated. Thus this buffer always has an updated version of the screen contents.
+ \par
+ Figure 3 is an interesting analog to Palacios, but is not completely accurate as to what Palacios and the VGA are doing. The guest believes its writing into the frame buffer through the VGA device and thus writing the content onto the screen. In the case of the VGA, the number of bits for each color will be 1, if it is in 16 color mode, since only 4 bits are needed for 16 different combinations. The last bit is most likely used for opacity, i.e. how transparent the pixel is. In VGA, for 256 color mode, there are 8 bits used. However, instead of each bit corresponding to some color, the bits were an index into a map of colors that allowed for use 6 different bits to be used for each color. While only 256 colors could be shown at any one time, a much larger palette of colors is available to choose the colors from. In actuality, each color could use 8-bits thus effectively having a palette of 2\textsuperscript{24} different colors, but the original VGA chose only to have 6-bits per color in the map. Instead of actually having the VGA have a frame buffer to write into, its memory that is written on is then copied into the frame buffer in Palacios graphics console which serves as the interface between the VNC server and Palacios in getting pixels to be written onto the screen. 
+ 
+ \subsubsection{Why try to replace VGA?}
+ VGA was very impressive for the time in which it was developed and was the predecessor to want display standards still used today. However, VGA presents a very complex interface due to the fact that it was created in a time when memory was scarce and processing power was much smaller. The intricacy of the device allowed it run when resources were limited. However, the basic principle of the interface was to have an array of pixels to be written into and then the data about the pixels would be sent to the screen and be displayed. Unfortunately, Palacios has to deal with the convolution that this legacy interface imposes. In addition, trying to use more current interfaces may seem like a way to lower the barrier of complexity since they usually have plenty of resources to be utilized. However, hardware now has advanced such that displays are more complicated due to trying to make processes even faster and more powerful than they already are. As such a simple interface such as just an area of memory to write in provides an effective way for graphics in Palacios to work.  
  
 \begin{figure}                                              
 \centering                                                     
@@ -178,7 +183,14 @@ such as registering it as a PCI device and initializing the PCI BAR.
 Paragraph's implementation is less than 300 lines of code.
 
 \subsection{X11}
- TODO
+ X11 is a computer software system and network protocol that provides a basis for graphical user interfaces (GUIs) and rich input device capability for networked computers.X11 uses a client-server protocol, the X protocol. The server is the computer or X terminal with the screen, keyboard, mouse and server program and the clients are application programs. Clients may run on the same computer as the server or on a different computer, communicating over Ethernet via TCP/IP protocols.An X server communicates with various client programs. The server accepts requests for graphical output (windows) and sends back user input (from keyboard, mouse, or touchscreen).
+ A major feature of X is network transparency, which means that any X client can run either on the local machine or on a remote machine without any obvious difference to the user in most cases.  
+ Figure 5 shows the client-server interaction in X11.
+ \begin{figure}[h]
+ \centering
+ \epsfig{file=X11.eps, height=3in, width=2in}
+ \caption{X11 Client-Server model}
+ \end{figure}
 \subsubsection{X11 device driver for Paragraph}
 The X11 server requires device drivers to identify and communicate with devices.
 In our case, we needed to write a device driver for Paragraph which the X server can
