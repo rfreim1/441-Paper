@@ -77,16 +77,16 @@ VNC server/client used in Palacios.
 
 \subsection{VGA}
 \subsubsection{What is VGA?}
-Palacios currently uses an emulated Video Graphics Array (VGA) device for graphics. VGA is a display standard that was first developed by IBM in 1987 for their PS/2 computers. It was used as an interface between a computer monitor and the hardware. It gave users the ability to operate in one of two display modes at a time; either a 640x480  resolution display with up to 16 colors or a lower resolution display of 320x200 but with up to 256 colors available. Today, the successors of VGA are still in wide-use by graphic cards, but they are slowly becoming replaced as DVI (Digital Visual Interfaces) and HDMI (High-Definition Multimedia Interface) become more popular.
+Palacios currently uses an emulated Video Graphics Array (VGA) device for graphics. VGA is a display standard that was first developed by IBM in 1987 for their PS/2 computers. It was used as an interface between a computer monitor and the hardware. It gave users the ability to operate in one of multiple display modes at a time; two examples of the modes are a 640x480  resolution display with up to 16 colors and a lower resolution display of 320x200 but with up to 256 colors available.\cite{ibmvga} Today, the successors of VGA are still in wide-use by graphic cards, but they are slowly becoming replaced as DVI (Digital Visual Interfaces) and HDMI (High-Definition Multimedia Interface) become more popular.
 \par
-To connect to a monitor, the hardware used a 15-pin connector that allowed communication through signals between the monitor and the VGA device. As seen in Figure 2, each color (red, green, blue) has a dedicated pin for data to flow through as well as specific pins for vertical sync and horizontal sync. Vertical and horizontal sync are digital signals whereas the colors are analog, and used for synchronization of the display. The vertical sync tells a monitor to display a new image and the horizontal sync tells the monitor to refresh a single row of pixels. In the case of VGA 640x480 resolution, each row would be of size 640 pixels and 480 horizontal syncs would be sent before the entire screen is drawn. Once a vertical sync pulse is received, the monitor starts to draw back at its upper-left hand corner. These synchronization pulses sent by the video card are extremely important for creating and maintaining stable images on the screen. Pins 5 through 10, excluding pin 9, are used as grounds for the colors and syncs. The other pins (4, 11, 12, \& 15) are called "monitor ID" pins that send information to the video card about what type of monitor it is connected to. Pin 9 is actually plugged and not used for anything, except in helping align the other pins with their respective sockets. 
+To connect to a monitor, the hardware used a 15-pin connector that allowed communication through signals between the monitor and the VGA device. As seen in Figure 2, each color (red, green, blue) has a dedicated pin for data to flow through as well as specific pins for vertical sync and horizontal sync.\cite{vgahead} Vertical and horizontal sync are digital signals whereas the colors are analog, and used for synchronization of the display. The vertical sync tells a monitor to display a new image and the horizontal sync tells the monitor to refresh a single row of pixels. In the case of VGA 640x480 resolution, each row would be of size 640 pixels and 480 horizontal syncs would be sent before the entire screen is drawn. Once a vertical sync pulse is received, the monitor starts to draw back at its upper-left hand corner. These synchronization pulses sent by the video card are extremely important for creating and maintaining stable images on the screen. Pins 5 through 10, excluding pin 9, are used as grounds for the colors and syncs. The other pins (4, 11, 12, and 15) are called "monitor ID" pins that send information to the video card about what type of monitor it is connected to.\cite{vgahead} Pin 9 is actually plugged and not used for anything, except in helping align the other pins with their respective sockets. 
 \par
  In terms of how it works, VGA maintains an internal buffer where it holds the contents of the screen. This internal buffer maintains an array of pixels, representing the screen and this array is written into every time the screen needs to be updated. Thus this buffer always has an updated version of the screen contents.
  \par
- Figure 3 is an interesting analog to Palacios, but is not completely accurate as to what Palacios and the VGA are doing. The guest believes its writing into the frame buffer through the VGA device and thus writing the content onto the screen. In the case of the VGA, the number of bits for each color will be 1, if it is in 16 color mode, since only 4 bits are needed for 16 different combinations. The last bit is most likely used for opacity, i.e. how transparent the pixel is. In VGA, for 256 color mode, there are 8 bits used. However, instead of each bit corresponding to some color, the bits were an index into a map of colors that allowed for use 6 different bits to be used for each color. While only 256 colors could be shown at any one time, a much larger palette of colors is available to choose the colors from. In actuality, each color could use 8-bits thus effectively having a palette of 2\textsuperscript{24} different colors, but the original VGA chose only to have 6-bits per color in the map. Instead of actually having the VGA have a frame buffer to write into, its memory that is written on is then copied into the frame buffer in Palacios graphics console which serves as the interface between the VNC server and Palacios in getting pixels to be written onto the screen. 
+ Figure 3 is an interesting analog to Palacios, but is not completely accurate as to what Palacios and the VGA are doing. The guest believes its writing into the frame buffer through the VGA device and thus writing the content onto the screen. In the case of the VGA, each color uses only 1 bits, if it is in 16 color mode, since only 4 bits are needed for 16 different combinations. The last bit is used for intensity, i.e. how dark/light the pixel is.\cite{ibmvga} For 256 color mode, there are 8 bits used. However, instead of each bit corresponding to some color, the bits are an index into a palette of colors  in the VGA BIOS that allowed for use 6 different bits to be used for each color.\cite{ibmvga} While only 256 colors could be shown at any one time, a much larger palette of colors is available to choose the colors from. In actuality, each color could use 8-bits thus effectively having a palette of 2\textsuperscript{24} different colors, but the original VGA only had 6-bits per color in the map. In Palacios, instead of actually having the VGA have a frame buffer to write into, its memory that is written on is then copied into the frame buffer in Palacios graphics console which serves as the interface between the VNC server and Palacios in getting pixels to be written onto the screen. 
  
  \subsubsection{Why try to replace VGA?}
- VGA was very impressive for the time in which it was developed and was the predecessor to want display standards still used today. However, VGA presents a very complex interface due to the fact that it was created in a time when memory was scarce and processing power was much smaller. The intricacy of the device allowed it run when resources were limited. However, the basic principle of the interface was to have an array of pixels to be written into and then the data about the pixels would be sent to the screen and be displayed. Unfortunately, Palacios has to deal with the convolution that this legacy interface imposes. In addition, trying to use more current interfaces may seem like a way to lower the barrier of complexity since they usually have plenty of resources to be utilized. However, hardware now has advanced such that displays are more complicated due to trying to make processes even faster and more powerful than they already are. As such a simple interface such as just an area of memory to write in provides an effective way for graphics in Palacios to work.  
+ VGA was very impressive for the time in which it was developed and was the predecessor to want display standards still used today. However, VGA presents a very complex interface due to the fact that it was created in a time when memory was scarce and processing power was much smaller (whole array of pixels did not even fit into processor's address space at once). The intricacy of the device was needed for it run when resources were limited. However, the basic principle of the interface was to have an array of pixels to be written into and then the data about the pixels would be sent to the screen and be displayed. Unfortunately, Palacios has to deal with the convolution that this legacy interface imposes. In addition, trying to use more current interfaces may seem like a way to lower the barrier of complexity since they usually have plenty of resources to be utilized. However, hardware now has advanced such that displays are more complicated due to hardware acceleration features. As such a simple interface such as just an area of memory to write in provides an effective way for graphics in Palacios to work.
  
 \begin{figure}                                              
 \centering                                                     
@@ -101,7 +101,7 @@ To connect to a monitor, the hardware used a 15-pin connector that allowed commu
 \end{figure} 
 
 \subsection{The Graphics Console} % can add more about its functions
-The Graphics Console interface interfaces with a VM's text\--mode and graphics
+The Graphics Console interface interfaces with a VM's text-mode and graphics
 mode display adaptor (e.g. VGA), keyboard, and mouse to allow the host OS to display the VM
 console as appropriate. In the Linux module, the graphics console interface implementation provides
 for a userspace utility to attach to a frame buffer. The utility then exports this frame buffer, keyboard,
@@ -122,7 +122,8 @@ the frame buffer to a VNC client which connects to the VM at a certain port and
 displays the screen with the contents of that frame buffer.
 
 \section{Our method}
-After describing the interaction between Palacios's VGA virtual device, graphics console and the VNC server and client, we now go into detail
+After describing the interaction between Palacios's VGA virtual device, 
+graphics console and the VNC server and client, we now go into detail
 about the paravirtual graphics card (Paragraph) that we built to replace the VGA 
 device. We also discuss the addition of an X11 server and X11 device driver to
 the virtual guest. Figure 2 shows the new addition of Paragraph and X11 to
@@ -151,7 +152,9 @@ implementation. In our case, we have Paragraph, a virtual graphics card device
 that offers the guest a very straightforward interface which is simply: write
 the array of pixels. Paragraph's configuration specifies how to write to the
 internal array of pixels that Palacios uses to copy from into the frame buffer
-that is maintained by the graphics console. \\
+that is maintained by the graphics console. 
+The device uses a single Base Address Register (BAR) to project the graphics console to the guest as a PCI device. 
+The BAR maps the memory of the frame buffer used by the graphics console. 
 \subsubsection{Data Structures}
 In order to register Paragraph as a PCI device on the guest, a struct was used
 to represent and store Paragraph's state. The struct stores information such as
@@ -183,7 +186,7 @@ The Paragraph device projects a graphics console to the guest as a PCI device
 Paragraph's length was configured to 4MB and it was given the physical address
 of 0x80000000. Paragraph's implementation includes the required initialization
 such as registering it as a PCI device and initializing the PCI BAR. 
-Paragraph's implementation is less than 300 lines of code.
+Due to its fairly simple nature, Paragraph's implementation is written with less than 300 lines of code.
 Table 1 describes some important Paragraph Device functions.
 \begin{table}
  \centering
@@ -191,7 +194,8 @@ Table 1 describes some important Paragraph Device functions.
   \begin{tabular}{|l|p{4cm}|} \hline
   \textbf{Function Name}&\textbf{Description}\\ \hline
  paragraph\textunderscore init & Initializes Paragraph based on the mode and allocates Paragraph memory .\\ \hline
- device\textunderscore register & Initializes Base Address Register,number of pages and registers Paragraph.\\ \hline
+ bar\textunderscore init & Initializes Base Address Register \\ \hline
+ bar\textunderscore write & Writes onto the BAR, i.e. the frame buffer of the Graphics Console. \\ \hline
  render\textunderscore callback & Copies contents of Paragraph memory into the Graphics console for GCONS\textunderscore MEM mode. \\ \hline
  paragraph\textunderscore free & Frees Paragraph Memory.\\ \hline
 \end{tabular}
@@ -199,13 +203,11 @@ Table 1 describes some important Paragraph Device functions.
 
 \subsection{X11}
 X (called X11 since 1987) originated at the Massachusetts Institute of Technology (MIT) in 1984.
-X11 provides a basis for GUI and allows input control even over remote machines.A user can contol a remote screen using the input devices connected to his machine only.
-Thus X provides windowing on computer displays and manages keyboard, mouse control and touchscreens.
-X11 uses a client-server protocol, the X protocol.
- The server is the computer or X terminal with the screen, keyboard, mouse and server program and the clients are application programs. 
-Clients may run on the same computer as the server or on a different computer, communicating over Ethernet via TCP/IP protocols.
-The server accepts requests for graphical display from the clients ie.the clients tell the server to draw something on the screen and the server sends back user input (from keyboard, mouse, or touchscreen).
-The important thing about X11 is the network transparancy,that is the client and server can run on separate machines,where the machines can have a different architecture.
+X11 provides a basis for GUI and allows input control even over remote machines. A user can control a remote screen using the input devices connected to his machine only.\cite{xguide} Thus X provides windowing on computer displays and is able to manage keyboards, mice and touch-screens.
+The server is the computer or X terminal with the screen, keyboard, mouse and server program and the clients are application programs. 
+Clients may run on the same computer as the server or on a different computer.\cite{xguide}
+XClients and Xservers communicate using the X Protocol which takes on a client-server model. X protocol can run over the UNIX Domain sockets, TCP/IP, or DECnet.\cite{xguide} The client sends requests to the server, such as having to draw something to draw on the screen. The server will then process this request and send a response, so it will write to the screen. This is contrary to most ideas of client-server interaction because the client can only ask for images to be drawn, but does not draw them itself. In addition, the Xserver receives input from input devices like mice and keyboards and send this data to the client. 
+One important thing about X11 is the network-transparency, that is a user can access a resource (like something from an Xserver) without needing to know if the resource is on the local machine or a remote one. 
 
 Figure 5 shows an example client-server interaction in X11. 
  \begin{figure}[h]
@@ -215,18 +217,18 @@ Figure 5 shows an example client-server interaction in X11.
  \end{figure}
 
 \subsubsection{X11 Configuration File}
-Starting up X11 requires configuration either from the command line, environmental variables or from a configuration file. In this case, xorg.conf is the configuration that details how one wants to layout the screen or screens, what graphics device they wish to use, what driver for that device, they are using, as well as many optional fields. Table 1 gives a short description of each of these sections. Most of these sections are actually optional with only a few important ones that require one or devices to be described. 
+Starting up X11 requires configuration either from the command line, environmental variables or from a configuration file. In this case, xorg.conf is the configuration that details how one wants to layout the screen or screens, what graphics device they wish to use, what driver for that device, they are using, as well as many optional fields. Table 1 gives a short description of each of these sections. Most of these sections are actually optional with only a few important ones that require one or devices to be described.\cite{config} 
 \par
-The \textbf{Inputdevice section} is optional if hotplugging, the ability to connect devices to the computer while it is already running, is enabled. Otherwise, at least two Inputdevices sections are necessary: one for the primary mouse and one for the primary keyboard. In these sections, an Identifier field that gives the device a custom name is required as well as a Driver field that specifies the name of the input device's driver. No other fields are required, however, one can add multiple options to customize the effects of these devices. 
+The \textbf{Inputdevice section} is optional if hotplugging, the ability to connect devices to the computer while it is already running, is enabled.\cite{config}  Otherwise, at least two Inputdevices sections are necessary: one for the primary mouse and one for the primary keyboard. In these sections, an Identifier field that gives the device a custom name is required as well as a Driver field that specifies the name of the input device's driver. No other fields are required, however, one can add multiple options to customize the effects of these devices.
 \par
-Another required field is the \textbf{Device section} which identifies the video card that X11 will use. There can multiple of these entries, but at least one is mandatory to have for X11 to start properly. Similar to the Inputdevice sections, only the Identifier and Driver fields are necessary for this section while the others are not required to be filled out. Unlike the Inputdevice fields though, the Device optional fields can be mandatory given the type of video card being used and how many. Fore example, if one is using a single monitor but with two graphics cards then both cards BusID must be provided. 
+Another required field is the \textbf{Device section} which identifies the video card that X11 will use. There can multiple of these entries, but at least one is mandatory to have for X11 to start properly. Similar to the Inputdevice sections, only the Identifier and Driver fields are necessary for this section while the others are not required to be filled out. Unlike the Inputdevice fields though, the Device optional fields can be mandatory given the type of video card being used and how many. Fore example, if one is using a single monitor but with two graphics cards then both cards BusID must be provided.\cite{config}
 \par
-The \textbf{Screen section} is also required which again requires the Identifier and Device fields to be filled out. The Device field gives the Identifier to a graphics card described in a Device Section. In addition, there is normally a Monitor field also filled out that has the id of a monitor that was defined in a Monitor section. This section used to bind a screen to a graphics card or more generally, if there is only one screen and one monitor, bind a video card to a monitor.  
+The \textbf{Screen section} is also required which again requires the Identifier and Device fields to be filled out. The Device field gives the Identifier to a graphics card described in a Device Section. In addition, there is normally a Monitor field also filled out that has the id of a monitor that was defined in a Monitor section. This section used to bind a screen to a graphics card or more generally, if there is only one screen and one monitor, bind a video card to a monitor.\cite{config}
 \par
-While the Screen section is used to bind monitors to video cards, the \textbf{Monitor section} is not actually required, but it is recommended to have at least one of them. The only field required is an ID, however, information about the monitor like its Horizontal and Vertical Sync frequencies can be optionally given. 
+While the Screen section is used to bind monitors to video cards, the \textbf{Monitor section} is not actually required, but it is recommended to have at least one of them. \cite{config}The only field required is an ID, however, information about the monitor like its Horizontal and Vertical Sync frequencies can be optionally given.
 \par
-The last required section is the \textbf{Serverlayout}. This binds together screens and input devices. This is the highest layer in the configuration file, binding all the necessary devices together to form a coherent X11 setup. For fields, it only requires an Identifier and one or more Screen ids. The Screen field needs to have the id of the screen being used and also has options for relative and absolute positioning of each screen if there is more than one. While not technically required, when there are input devices, they would be given in the InputDevice field with their respective id. Normally, this would entail providing the id for a mouse and keyboard. 
-All other unfilled optional sections will be filled in with defaults, if needed, when X11 begins to run. 
+The last required section is the \textbf{Serverlayout}. This binds together screens and input devices.\cite{config} This is the highest layer in the configuration file, binding all the necessary devices together to form a coherent X11 setup. For fields, it only requires an Identifier and one or more Screen ids. The Screen field needs to have the id of the screen being used and also has options for relative and absolute positioning of each screen if there is more than one. While not technically required, when there are input devices, they would be given in the InputDevice field with their respective id. Normally, this would entail providing the id for a mouse and keyboard. 
+All other unfilled optional sections will be filled in with defaults, if needed, when X11 begins to run.
 
 \begin{table}
  \centering
@@ -245,18 +247,85 @@ All other unfilled optional sections will be filled in with defaults, if needed,
 \end{tabular}
 \end{table}
 
+\subsubsection{X11 Control Flow}
+\begin{itemize}
+\item \textbf{Parsing/Probing Phase} \\
+The InitOutput function is called in the main() of X11 whenever a server is created and is expected to fill in the global structure, {\tt screenInfo} and a {\tt screenInfo.screen[]} for every screen used.\cite{xorgman} The following steps are done when InitOutput is called:
+\begin{enumerate}
+\item \textit{Parse the xorg.conf file:} \\
+The file is read and stored into data structures but not processed at all. \cite{xorgman}
+\item \textit{Process Information:} \\
+The parsed information and any command line options are now processed to determine which section in the xorg.conf file are active (being used for this server) and what paths it may have to look in for files needed. \cite{xorgman}
+This processing as well as the parsing of the config file are only done when the first server is made. 
+\item \textit{Port I/O Access Enabled}
+\item \textit{General Bus Probe:} \\
+Only done when first server created. In case of Palacios, it will be a PCI probe and given the data attained to drivers if they call for it.\cite{xorgman}
+\item \textit{Load initial set of modules:} \\
+Only done when first server created. Loads any required modules, modules specified in the configuration file, and any modules for drivers that have active devices.\cite{xorgman}
+\item \textit{Register Drivers:} \\
+Only done when first server created. Registers input and video drivers by adding certain essential info about the drivers to their respective arrays, {\tt xf86DriverList[]} \& \\ {\tt xf86InputDriverList[]}. \cite{xorgman}
+\item \textit{Probe Video Drivers} \\
+Only done when first server created. To probe the video drivers, a function called {\tt ChipProbe} is called. This is used to find all hardware that the driver supports. An {\tt ScreenInfoRec} is partially initialized and allocated for every piece of active devices that can be supported. \cite{xorgman}
+\item \textit{Match Screens} \\
+Only done when first server created. This stage checks all the {\tt ScreenInfoRecs} and sees if the xorg.conf file had them active. If not, the {\tt ScreenInfoRecs} is deleted. \cite{xorgman}
+\item \textit{Allocate PCI Resources} \\
+Only done when first server created.
+Resources for PCI devices probed are allocated. Any conflicting resources between devices are resolved. \cite{xorgman}
+\end{enumerate}
+
+\item \textbf{Driver Function Phase} \\
+While we are still in the InitOutput() function, the majority of driver functions are called. These functions are not all really necessary for our ParaGraph Device to work, but are needed for X11 to work properly. While The Probe function is also a driver function, the next phase focusing almost completely on calling driver functions. 
+
+\begin{enumerate}
+\item \textit{PreInit Called} \\
+Only done when first server created.
+A drivers PreInit function is called to get all the data needed to see if the configuration given is stable and able to be used. It also initializes the majority of the fields in the ScrnInfoRec struct If any configuration for a ScrnInfoRec is unusable, it is deleted. \cite{xorgman}
+\item \textit{Clean up Unused Drivers} \\
+Any drivers whose ScrnInfoRec was deleted can have their modules and themselves unloaded. \cite{xorgman}
+\item \textit{ScreenInit Called} \\
+The {\tt AddScreen()} function is called and uses the ScreenInit function. This will add a new screen to the {\tt screenInfo.screen[]} array. \\ AddScreen() should then return the index of the screen. The function shouldn't fail due to configuration problems, but only if resources are given or there are bugs in the programs. \cite{xorgman}
+\end{enumerate}
+\item \textbf{Event Handling Phase} \\
+InitOutput() should now finish and all screens should be initialized. Now whenever an event occurs an appropriate function in the driver will be called to handle it. 
+\begin{itemize}
+\item \textit{SwitchMode Event}
+\item \textit{Change Viewport Event}
+\item \textit{VT (Virtual Terminal) Switch Event}
+\end{itemize}
+\end{itemize}
+
+\subsubsection{Why use X11?}
+In many ways, X11 is very flexible and extensible, making a good candidate to be ported onto a Palacios Guest. Due to how X11 was developed, it is hardware-independent making it possible to use on most hardware configurations. As Palacios has many hardware customizations in terms of what is being used, X11 would be very compatible since it should run on most configurations. Moreover, X11 only provides basic frameworks for a GUI. As such, if it were decided to create software on guests that may require or would be nicer with a GUI, then X11 could be used to create an XClient application for the VM. Finally, Palacios currently is running a emulated shell program and it would be good if it could run a full-fledged shell program. With X11 installed and working, xterm could be used as an alternative to the existing terminal, offering more options and higher functionality. 
+
 \subsubsection{X11 device driver for Paragraph}
 The X11 server requires device drivers to identify and communicate with devices.
-To identify a driver for a particular device, Xorg uses a configuration file called xorg.conf for its initial setup. 
+To identify a driver for a particular device, Xorg uses a configuration file, xorg.conf, for its initial setup as describe in Section 3.2.1. 
 In our case, we needed to write a device driver for Paragraph which the X server can
 write onto.
 X11 drivers come with a set of mandatory functions that they must perform. Table
-3 lists these functions. Table 4 lists the steps that occur when the X11 device driver is invoked.
+3 lists these functions.
 Due to Paragraph's straightforward and simple interface, the device driver only
 needed slight editing in order for it to communicate with paragraph. A simple
 mmap function was used to map paragraph to a chunk of memory and return
 paragraph's virtual address, which would consequently be used as the frame
 buffer's base address. The X11 server writes to the memory at that address.
+
+
+\begin{table}
+ \centering
+  \caption{X11 Driver Functions}
+  \begin{tabular}{|l|p{4cm}|} \hline
+  \textbf{Function Name}&\textbf{Description}\\ \hline
+  ScreenInit & An initialisation function is called from the DIX layer for each screen at the start of each server generation.\\ \hline
+  Probe & Identify if there is any hardware present that the driver knows how to drive.\\ \hline
+  PreInit & Process information from the xorg.conf file, determine the full characteristics of the hardware, and determine if a valid configuration is present. \\ \hline
+  Mode Switch & Change video mode \\ \hline
+  ViewPort Change & Change the origin of the physical view port \\ \hline
+  ScreenSaver State Change & Screen saver activation/deactivation \\ \hline
+  CloseScreen & A close screen function is called from the DIX layer for each screen at the end of each server generation \\ \hline
+\end{tabular}
+\end{table}
+
 
 \section{Results}
 The goal of this project was to write a paravirtual graphics card and run an X11
@@ -269,6 +338,7 @@ We were also able to configure an X11 device driver that used such a device as a
 frame buffer for the X11 server to render to. However, we still have not been able to run
 the X server on the guest, mainly due to our use of a fairly limited guest OS
 that don't have all the devices or libraries that the X server needs.
+
 \section{Outstanding Issues}
 Running the X server on the virtual guest requires it to be reconfigured. The
 use of another guest that has pseudo terminals installed. A
@@ -278,48 +348,6 @@ the other side is called the slave side.
 Data written to the master side is received by the slave side as if it was the result of a user typing at an ordinary terminal, 
 and data written to the slave side is sent to the master side as if it was written on an ordinary terminal.
 X11 clients such as xterm use pseudo terminals to implement their terminal emulation functionality.
-
-
-\begin{table}
- \centering
-  \caption{X11 Driver Functions}
-  \begin{tabular}{|l|p{4cm}|} \hline
-  \textbf{Function Name}&\textbf{Description}\\ \hline
-  ScreenInit & An initialisation function is called from the DIX layer for each screen at the start of each server generation.\\ \hline
-  Probe & Identify if there is any hardware present that the driver knows how to drive.\\ \hline
-  PreInit & Process information from the xorg.conf file, determine the full characteristics of the hardware, and determine if a valid configuration is present. \\ \hline
-  Mode Switch & Change video mode \\ \hline
-  ViewPort change & Change the origin of the physical view port \\ \hline
-  ScreenSaver state change & Screen saver activation/deactivation \\ \hline
-  CloseScreen & A close screen function is called from the DIX layer for each screen at the end of each server generation \\ \hline
-\end{tabular}
-\end{table}
-
-\begin{table}
- \centering
-  \caption{Control flow in the X11 Driver }
-  \begin{tabular}{|l|p{4cm}|} \hline
-  \textbf{Number}&\textbf{Step}\\ \hline
-  1 & Parse the xorg.conf file.\\ \hline
-  2 & Process parsed information and command line options.\\ \hline
-  3 & Enable port I/O access. \\ \hline
-  4 & General bus probe \\ \hline
-  5 & Load initial set of modules \\ \hline
-  6 & Register Video and Input Drivers  \\ \hline
-  7 & Probe Video Driver\\ \hline
-  8 & Matching data structures with active 'Screen' sections in the xorg.conf file\\ \hline
-  9 & Allocate non-conflicting resources\\ \hline
-  10 & Sort the Screens and pre-check Monitor Information\\ \hline
-  11 & PreInit\\ \hline
-  12 & Cleaning up Unused Drivers\\ \hline
-  13 & Check if Resource Control is Needed\\ \hline
-  14 & ScreenInit\\ \hline       
-  15 & Mode Switching on receiving a SwitchMode event\\ \hline
-  16 & Changing Viewport on receiving a Change Viewport event\\ \hline
-  17 & VT Switching on receiving a VT Switch event\\ \hline
-\end{tabular}
-\end{table}
-
 
 \section{Acknowledgments}
 We would like to thank Peter Dinda for the many, many hours he spent tirelessly with us as we
@@ -345,15 +373,19 @@ not during their office hours.
 \begin{thebibliography}{1}
 
   \bibitem{techreport} Lange, Jack, Peter Dinda, Kyle Hale, and Lei Xia. An Introduction to the Palacios Virtual Machine Monitor---Version 1.3. Tech. Northwestern University, 11 Nov. 2011. Web. 01 Mar. 2013.
+	
+  \bibitem{config} Dawes, David. xorg.conf(5)- Linux man page. linux.die.net/man/5/xorg.conf
 
-  \bibitem{impj} Wikipedia 
+  \bibitem{xorgman} Gettys, Jim. 2010. XFree86 DDX Design manual (Xorg server version 1.9.3). http://www.x.org/releases/X11R7.6/doc/xorg-server/DESIGN.html\#id2523249
+  
+  \bibitem{vgahead} Hinner, Martin. VGA Pinout. 2007. http://martin.hinner.info/vga/pinout.html
 
-  \bibitem{xorg manual}XFree86 DDX Design manual (Xorg server version 1.9.3) 
-
+  \bibitem{ibmvga} IBM. 1992. VGA Function. http://www.mcamafia.de/pdf/ibm\_vgaxga\_trm2.pdf 
+  
+  \bibitem{xguide} Mui, Linda and Pearce, Eric. 1993. X Window System Administrator's Guide, Ed. Tim O'Reilly, Sebastopol, CA, O'Reilly \& Associates, Inc., pp. 3-6. 
+  
+  
   \end{thebibliography}
-Generated by bibtex from your ~.bib file.  Run latex,
-then bibtex, then latex twice (to resolve references)
-the command \texttt{{\char'134}thebibliography}.
 % This next section command marks the start of
 % Appendix B, and does not continue the present hierarchy
 \balancecolumns
