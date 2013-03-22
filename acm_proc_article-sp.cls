@@ -206,8 +206,8 @@
 \@itempenalty     -\@lowpenalty % Between list items.
 
 %\@namedef{ds@10pt}{\@latexerr{The `10pt' option is not allowed in the `acmconf'
-\@namedef{ds@10pt}{\ClassError{The `10pt' option is not allowed in the `acmconf'	% January 2008
-  document style.}\@eha}
+%\@namedef{ds@10pt}{\ClassError{The `10pt' option is not allowed in the `acmconf'	% January 2008
+%  document style.}\@eha}
 %\@namedef{ds@11pt}{\@latexerr{The `11pt' option is not allowed in the `acmconf'
 \@namedef{ds@11pt}{\ClassError{The `11pt' option is not allowed in the `acmconf'	% January 2008
   document style.}\@eha}
@@ -221,13 +221,13 @@
 \normallineskip 2pt
 \def\baselinestretch{1}
 
-\abovedisplayskip 9pt plus2pt minus4.5pt%
+\abovedisplayskip 10pt plus2pt minus4.5pt%
 \belowdisplayskip \abovedisplayskip
 \abovedisplayshortskip  \z@ plus3pt%
 \belowdisplayshortskip  5.4pt plus3pt minus3pt%
 \let\@listi\@listI     % Setting of \@listi added 9 Jun 87
 
-\def\small{\@setsize\small{9pt}\viiipt\@viiipt
+\def\small{\@setsize\small{9.2pt}\viiipt\@viiipt
 \abovedisplayskip 7.6pt plus 3pt minus 4pt%
 \belowdisplayskip \abovedisplayskip
 \abovedisplayshortskip \z@ plus2pt%
@@ -236,7 +236,7 @@
 \topsep 4pt plus 2pt minus 2pt\parsep 2pt plus 1pt minus 1pt
 \itemsep \parsep}}
 
-\def\footnotesize{\@setsize\footnotesize{9pt}\ixpt\@ixpt
+\def\footnotesize{\@setsize\footnotesize{10pt}\ixpt\@ixpt
 \abovedisplayskip 6.4pt plus 2pt minus 4pt%
 \belowdisplayskip \abovedisplayskip
 \abovedisplayshortskip \z@ plus 1pt%
@@ -326,11 +326,11 @@
 \newfont{\auit}{phvro8t at 12pt}     % GM 2/4/2000
 \newfont{\affaddr}{phvr8t at 10pt}
 \newfont{\affaddrit}{phvro8t at 10pt} % GM 2/4/2000
-\newfont{\eaddfnt}{phvr8t at 12pt}
-\newfont{\ixpt}{ptmr8t at 9pt}
+\newfont{\eaddfnt}{phvr8t at 8pt}
+\newfont{\ixpt}{ptmr8t at 10pt}
 \newfont{\confname}{ptmri8t at 8pt}
 \newfont{\crnotice}{ptmr8t at 8pt}
-\newfont{\ninept}{ptmr8t at 9pt}
+\newfont{\ninept}{ptmr8t at 10pt}
 % +++++++++++++++++++++++++++++++++++++++++++++
 % -- End of block B --
 
@@ -451,7 +451,7 @@
 \def\thesection       {\arabic{section}}
 \def\thesubsection    {\thesection.\arabic{subsection}}
 %\def\thesubsubsection {\thesubsection.\arabic{subsubsection}} % GM 7/30/2002
-%\def\theparagraph     {\thesubsubsection.\arabic{paragraph}}  % GM 7/30/2002
+%\def\theparagraph     {\thesub.\arabic{paragraph}}  % GM 7/30/2002
 \def\thesubparagraph  {\theparagraph.\arabic{subparagraph}}
 
 \def\@pnumwidth{1.55em}
@@ -636,7 +636,7 @@
 \@maxdepth\maxdepth
 %
 \DeclareOldFontCommand{\rm}{\ninept\rmfamily}{\mathrm}
-\DeclareOldFontCommand{\sf}{\normalfont\sffamily}{\mathsf}
+\DeclareOldFontCommand{\sf}{\sffamily}{\mathsf}
 \DeclareOldFontCommand{\tt}{\normalfont\ttfamily}{\mathtt}
 \DeclareOldFontCommand{\bf}{\normalfont\bfseries}{\mathbf}
 \DeclareOldFontCommand{\it}{\normalfont\itshape}{\mathit}
@@ -655,7 +655,8 @@
 % to change {cmr} to {times} above. (Not recommended)
   \renewcommand{\@ptsize}{}
   \renewcommand{\normalsize}{%
-    \@setfontsize\normalsize\@ixpt{10.5\p@}%\ninept%
+%    \@setfontsize\normalsize\@ixpt{10.5\p@}%\ninept%
+    \@setfontsize\normalsize\@xpt{12\p@}%\tenpt% %% Adjusted for 10pt
     \abovedisplayskip 6\p@ \@plus2\p@ \@minus\p@
     \belowdisplayskip \abovedisplayskip
     \abovedisplayshortskip 6\p@ \@minus 3\p@
@@ -664,7 +665,8 @@
   }
 \else
   \def\@normalsize{%changed next to 9 from 10
-    \@setsize\normalsize{9\p@}\ixpt\@ixpt
+%    \@setsize\normalsize{10\p@}\ixpt\@ixpt
+    \@setsize\normalsize{10\p@}\xpt\@xpt %% Adjusted for 10pt
    \abovedisplayskip 6\p@ \@plus2\p@ \@minus\p@
     \belowdisplayskip \abovedisplayskip
     \abovedisplayshortskip 6\p@ \@minus 3\p@
@@ -843,7 +845,7 @@
 \end@float}
 
 \def\@toappear{} % Default setting blank - commands below change this.
-\long\def\toappear#1{\def\@toappear{\parbox[b]{20pc}{\baselineskip 9pt#1}}}
+\long\def\toappear#1{\def\@toappear{\parbox[b]{20pc}{\baselineskip 10pt#1}}}
 \def\toappearbox#1{\def\@toappear{\raisebox{5pt}{\framebox[20pc]{\parbox[b]{19pc}{#1}}}}}
 
 \newtoks\conf
@@ -995,7 +997,7 @@
 %% END CHANGES
 \setcounter{secnumdepth}{3}
 \def\part{%
-    \@startsection{part}{9}{\z@}{-10\p@ \@plus -4\p@ \@minus -2\p@}
+    \@startsection{part}{10}{\z@}{-10\p@ \@plus -4\p@ \@minus -2\p@}
         {4\p@}{\normalsize\@ucheadtrue}%
 }
 
@@ -1398,19 +1400,19 @@
 \def\titlenote{\@ifnextchar[\@xtitlenote{\stepcounter\@mpfn
 \global\advance\titlenotecount by 1
 \ifnum\titlenotecount=1
-    \raisebox{9pt}{$\ast$}
+    \raisebox{10pt}{$\ast$}
 \fi
 \ifnum\titlenotecount=2
-    \raisebox{9pt}{$\dagger$}
+    \raisebox{10pt}{$\dagger$}
 \fi
 \ifnum\titlenotecount=3
-    \raisebox{9pt}{$\ddagger$}
+    \raisebox{10pt}{$\ddagger$}
 \fi
 \ifnum\titlenotecount=4
-\raisebox{9pt}{$\S$}
+\raisebox{10pt}{$\S$}
 \fi
 \ifnum\titlenotecount=5
-\raisebox{9pt}{$\P$}
+\raisebox{10pt}{$\P$}
 \fi
          \@titlenotetext
 }}
